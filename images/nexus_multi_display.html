@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dataPARC Multi-Chart Display</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0a0e1a;
+            color: #e0e6ed;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        /* Top Navigation Bar */
+        .top-nav {
+            background: #1a1f2e;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #2a3444;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .logo {
+            color: #00d4ff;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .logo::before {
+            content: "";
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #00d4ff, #0099ff);
+            border-radius: 4px;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+        }
+
+        .nav-tabs span {
+            color: #8b95a8;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .nav-tabs span:hover {
+            color: #00d4ff;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 20px;
+            font-size: 12px;
+            color: #00d4ff;
+        }
+
+        .top-actions span {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            height: calc(100vh - 41px);
+        }
+
+        /* Left Sidebar */
+        .left-sidebar {
+            width: 200px;
+            background: #141824;
+            border-right: 1px solid #2a3444;
+            padding: 16px 0;
+        }
+
+        .sidebar-section {
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-section:hover {
+            background: #1a1f2e;
+        }
+
+        .sidebar-section.active {
+            background: #1e2a3a;
+            color: #00d4ff;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .sidebar-section::before {
+            content: "▸";
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .sidebar-section.active::before {
+            transform: rotate(90deg);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            background: #0a0e1a;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        /* File Header */
+        .file-header {
+            background: #141824;
+            padding: 8px 16px;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .file-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #00d4ff;
+        }
+
+        .file-info {
+            font-size: 11px;
+            color: #8b95a8;
+        }
+
+        .new-btn {
+            background: #00d4ff;
+            color: #0a0e1a;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        /* Chart Grid */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .chart-container {
+            background: #141824;
+            border: 1px solid #2a3444;
+            border-radius: 6px;
+            padding: 12px;
+            position: relative;
+            min-height: 280px;
+        }
+
+        .chart-container.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Chart Header */
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2a3444;
+        }
+
+        .chart-title-area {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .chart-tag {
+            font-size: 11px;
+            color: #8b95a8;
+        }
+
+        .chart-description {
+            font-size: 12px;
+            color: #e0e6ed;
+            font-weight: 500;
+        }
+
+        .chart-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 11px;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+        }
+
+        .stat-label {
+            color: #8b95a8;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            font-weight: 600;
+        }
+
+        .chart-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chart-btn {
+            background: transparent;
+            border: 1px solid #2a3444;
+            color: #8b95a8;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chart-btn:hover {
+            border-color: #00d4ff;
+            color: #00d4ff;
+        }
+
+        /* Chart Area */
+        .chart-canvas {
+            height: 200px;
+            position: relative;
+            background: #0f1218;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        /* Time axis */
+        .time-axis {
+            position: absolute;
+            bottom: 0;
+            left: 40px;
+            right: 20px;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: #5a6370;
+            border-top: 1px solid #1e2530;
+        }
+
+        .time-label {
+            padding: 0 4px;
+        }
+
+        /* Y-axis */
+        .y-axis {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 20px;
+            width: 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #5a6370;
+            padding: 8px 4px;
+        }
+
+        .y-label {
+            text-align: right;
+            line-height: 1;
+        }
+
+        /* Grid lines */
+        .grid-lines {
+            position: absolute;
+            left: 40px;
+            right: 20px;
+            top: 0;
+            bottom: 20px;
+        }
+
+        .grid-line-h {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #1e2530;
+        }
+
+        .grid-line-v {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #1e2530;
+        }
+
+        /* SVG Chart Paths */
+        .chart-path {
+            position: absolute;
+            left: 40px;
+            right: 20px;
+            top: 10px;
+            bottom: 30px;
+        }
+
+        /* Color-coded paths */
+        .path-green {
+            stroke: #00ff88;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .path-magenta {
+            stroke: #ff00ff;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .path-cyan {
+            stroke: #00d4ff;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Scatter Plot */
+        .scatter-plot {
+            position: absolute;
+            left: 40px;
+            right: 20px;
+            top: 10px;
+            bottom: 30px;
+        }
+
+        .scatter-dot {
+            fill: #ff00ff;
+            opacity: 0.8;
+        }
+
+        /* Bar Chart */
+        .bar-chart-svg {
+            position: absolute;
+            left: 40px;
+            right: 20px;
+            top: 10px;
+            bottom: 30px;
+        }
+
+        .bar-rect {
+            fill: #ff00ff;
+        }
+
+        /* Data Table Below Chart */
+        .data-table-section {
+            margin-top: 12px;
+            background: #0f1218;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .data-table {
+            width: 100%;
+            font-size: 11px;
+            border-collapse: collapse;
+        }
+
+        .data-table thead {
+            background: #1a1f2e;
+        }
+
+        .data-table th {
+            padding: 6px 8px;
+            text-align: left;
+            color: #8b95a8;
+            font-weight: 600;
+            border-bottom: 1px solid #2a3444;
+        }
+
+        .data-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #1e2530;
+            color: #e0e6ed;
+        }
+
+        .data-table tbody tr:hover {
+            background: #141824;
+        }
+
+        .data-table .col-tag {
+            color: #00d4ff;
+        }
+
+        .data-table .col-value {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Checkbox styling */
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .custom-checkbox {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #2a3444;
+            background: #0a0e1a;
+            cursor: pointer;
+        }
+
+        .custom-checkbox:checked {
+            background: #00d4ff;
+        }
+
+        /* Status indicators */
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0e1a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a3444;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a4454;
+        }
+
+        /* Right sidebar info panel */
+        .right-panel {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: #141824;
+            border: 1px solid #2a3444;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            min-width: 200px;
+        }
+
+        .panel-label {
+            color: #8b95a8;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .panel-content {
+            color: #e0e6ed;
+        }
+
+        /* Chart timestamp */
+        .chart-timestamp {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 24, 36, 0.9);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #00d4ff;
+            border: 1px solid #2a3444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <div class="logo-section">
+            <div class="logo">dataPARC</div>
+            <div class="nav-tabs">
+                <span>PARCview</span>
+                <span>Nexus</span>
+                <span style="color: #00d4ff;">NexusAI</span>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span>⚙️ DevFeatures</span>
+            <span>🏷️ Tag Browser</span>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div class="sidebar-section active">3 Tags</div>
+            <div class="sidebar-section">MultiTrend 2×2</div>
+            <div class="sidebar-section">Flow Diagram</div>
+            <div class="sidebar-section">Displays</div>
+            <div class="sidebar-section">Public</div>
+            <div class="sidebar-section">SecurityTest</div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- File Header -->
+            <div class="file-header">
+                <div>
+                    <div class="file-title">📄 File</div>
+                    <div class="file-info">3 Tags [ Displays\3 Tags.ds_tr ]</div>
+                </div>
+                <div class="new-btn">⊕ New</div>
+            </div>
+
+            <!-- Top Row: Two Side-by-Side Charts -->
+            <div class="chart-grid">
+                <!-- Chart 1: Green Sine Wave -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title-area">
+                            <div class="chart-tag">50# WEB</div>
+                            <div class="chart-description">Double Names</div>
+                        </div>
+                        <div class="chart-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Min</span>
+                                <span class="stat-value">500</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">404 WEB</span>
+                                <span class="stat-value">5.2</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-canvas">
+                        <!-- Y-axis -->
+                        <div class="y-axis">
+                            <div class="y-label">9.0</div>
+                            <div class="y-label">8.0</div>
+                            <div class="y-label">7.0</div>
+                            <div class="y-label">6.0</div>
+                            <div class="y-label">5.0</div>
+                            <div class="y-label">4.0</div>
+                            <div class="y-label">3.0</div>
+                            <div class="y-label">2.0</div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid-lines">
+                            <div class="grid-line-h" style="top: 12.5%"></div>
+                            <div class="grid-line-h" style="top: 25%"></div>
+                            <div class="grid-line-h" style="top: 37.5%"></div>
+                            <div class="grid-line-h" style="top: 50%"></div>
+                            <div class="grid-line-h" style="top: 62.5%"></div>
+                            <div class="grid-line-h" style="top: 75%"></div>
+                            <div class="grid-line-h" style="top: 87.5%"></div>
+                            
+                            <div class="grid-line-v" style="left: 14.28%"></div>
+                            <div class="grid-line-v" style="left: 28.56%"></div>
+                            <div class="grid-line-v" style="left: 42.84%"></div>
+                            <div class="grid-line-v" style="left: 57.12%"></div>
+                            <div class="grid-line-v" style="left: 71.4%"></div>
+                            <div class="grid-line-v" style="left: 85.68%"></div>
+                        </div>
+
+                        <!-- Chart Path (Green Sine Wave) -->
+                        <svg class="chart-path" viewBox="0 0 1000 160" preserveAspectRatio="none">
+                            <path class="path-green" d="M 0,80 Q 62.5,20 125,80 T 250,80 T 375,80 T 500,80 T 625,80 T 750,80 T 875,80 T 1000,80" />
+                        </svg>
+
+                        <!-- Time axis -->
+                        <div class="time-axis">
+                            <span class="time-label">03:00</span>
+                            <span class="time-label">45# WEB</span>
+                            <span class="time-label">05:00</span>
+                            <span class="time-label">50# WEB</span>
+                            <span class="time-label">07:00</span>
+                            <span class="time-label">40# WEB</span>
+                            <span class="time-label">09:00</span>
+                            <span class="time-label">44# WEB</span>
+                            <span class="time-label">50# WEB</span>
+                        </div>
+                        
+                        <div class="chart-timestamp">01/27/26 02:33</div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="data-table-section">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                    <th>Database Min</th>
+                                    <th>Database Max</th>
+                                    <th>Min</th>
+                                    <th>Max</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="col-tag">Analog_05</td>
+                                    <td>Analog_05-PredProf Tag</td>
+                                    <td class="col-value">0</td>
+                                    <td class="col-value">10</td>
+                                    <td class="col-value">2</td>
+                                    <td class="col-value">8</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Magenta Varying Wave -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title-area">
+                            <div class="chart-tag">Analog_05</div>
+                            <div class="chart-description">Analog_05-PredProf Tag</div>
+                        </div>
+                        <div class="chart-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Min</span>
+                                <span class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max</span>
+                                <span class="stat-value">YES</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-canvas">
+                        <!-- Y-axis -->
+                        <div class="y-axis">
+                            <div class="y-label">9.0</div>
+                            <div class="y-label">8.0</div>
+                            <div class="y-label">7.0</div>
+                            <div class="y-label">6.0</div>
+                            <div class="y-label">5.0</div>
+                            <div class="y-label">4.0</div>
+                            <div class="y-label">3.0</div>
+                            <div class="y-label">2.0</div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid-lines">
+                            <div class="grid-line-h" style="top: 12.5%"></div>
+                            <div class="grid-line-h" style="top: 25%"></div>
+                            <div class="grid-line-h" style="top: 37.5%"></div>
+                            <div class="grid-line-h" style="top: 50%"></div>
+                            <div class="grid-line-h" style="top: 62.5%"></div>
+                            <div class="grid-line-h" style="top: 75%"></div>
+                            <div class="grid-line-h" style="top: 87.5%"></div>
+                        </div>
+
+                        <!-- Chart Path (Magenta wave with rapid oscillations) -->
+                        <svg class="chart-path" viewBox="0 0 1000 160" preserveAspectRatio="none">
+                            <path class="path-magenta" d="M 0,60 L 50,40 L 100,65 L 150,35 L 200,70 L 250,25 L 300,75 L 350,20 L 400,80 L 450,50 L 500,30 L 550,35 L 600,33 L 650,36 L 700,34 L 750,35 L 800,33 L 850,36 L 900,34 L 950,35 L 1000,33" />
+                        </svg>
+
+                        <!-- Time axis -->
+                        <div class="time-axis">
+                            <span class="time-label">0</span>
+                            <span class="time-label">10</span>
+                            <span class="time-label">20</span>
+                            <span class="time-label">30</span>
+                            <span class="time-label">40</span>
+                            <span class="time-label">50</span>
+                            <span class="time-label">60</span>
+                            <span class="time-label">70</span>
+                            <span class="time-label">80</span>
+                            <span class="time-label">90</span>
+                        </div>
+                        
+                        <div class="chart-timestamp">01/27/26 02:33</div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="data-table-section">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Auto</th>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                    <th>Auto Scale</th>
+                                    <th>Min</th>
+                                    <th>Max</th>
+                                    <th>Y/N</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="checkbox-cell">☑</td>
+                                    <td class="col-tag">Y Tag</td>
+                                    <td></td>
+                                    <td class="checkbox-cell">☑</td>
+                                    <td class="col-value">0</td>
+                                    <td class="col-value">YES</td>
+                                    <td class="col-value"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- NoDataToDisplay Label -->
+                    <div class="right-panel">
+                        NoDataToDisplay
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row: Two More Charts -->
+            <div class="chart-grid">
+                <!-- Chart 3: Scatter Plot with Callout -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title-area">
+                            <div class="chart-tag">312F1C504 - BL - Flow gpm</div>
+                            <div class="chart-description">Dissolving Tank Level</div>
+                        </div>
+                        <div class="chart-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Min</span>
+                                <span class="stat-value">5</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max</span>
+                                <span class="stat-value">1</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-canvas">
+                        <!-- Y-axis -->
+                        <div class="y-axis">
+                            <div class="y-label">5.2</div>
+                            <div class="y-label">5.2</div>
+                            <div class="y-label">5.2</div>
+                            <div class="y-label">5.1</div>
+                            <div class="y-label">5.1</div>
+                            <div class="y-label">5.1</div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid-lines">
+                            <div class="grid-line-h" style="top: 16.66%"></div>
+                            <div class="grid-line-h" style="top: 33.33%"></div>
+                            <div class="grid-line-h" style="top: 50%"></div>
+                            <div class="grid-line-h" style="top: 66.66%"></div>
+                            <div class="grid-line-h" style="top: 83.33%"></div>
+                        </div>
+
+                        <!-- Scatter Plot (Magenta dots clustered) -->
+                        <svg class="scatter-plot" viewBox="0 0 1000 160" preserveAspectRatio="none">
+                            <!-- Cluster of dots in middle-right area -->
+                            <circle class="scatter-dot" cx="650" cy="50" r="3"/>
+                            <circle class="scatter-dot" cx="655" cy="55" r="3"/>
+                            <circle class="scatter-dot" cx="660" cy="48" r="3"/>
+                            <circle class="scatter-dot" cx="665" cy="52" r="3"/>
+                            <circle class="scatter-dot" cx="670" cy="58" r="3"/>
+                            <circle class="scatter-dot" cx="675" cy="45" r="3"/>
+                            <circle class="scatter-dot" cx="680" cy="60" r="3"/>
+                            <circle class="scatter-dot" cx="685" cy="53" r="3"/>
+                            <circle class="scatter-dot" cx="690" cy="49" r="3"/>
+                            <circle class="scatter-dot" cx="645" cy="62" r="3"/>
+                            <circle class="scatter-dot" cx="650" cy="56" r="3"/>
+                            <circle class="scatter-dot" cx="655" cy="47" r="3"/>
+                            <circle class="scatter-dot" cx="660" cy="54" r="3"/>
+                            <circle class="scatter-dot" cx="665" cy="61" r="3"/>
+                            <circle class="scatter-dot" cx="670" cy="43" r="3"/>
+                            <circle class="scatter-dot" cx="675" cy="59" r="3"/>
+                            <circle class="scatter-dot" cx="680" cy="51" r="3"/>
+                            <circle class="scatter-dot" cx="685" cy="57" r="3"/>
+                            <circle class="scatter-dot" cx="690" cy="46" r="3"/>
+                            
+                            <!-- Sparse dots on left side -->
+                            <circle class="scatter-dot" cx="250" cy="70" r="3"/>
+                            <circle class="scatter-dot" cx="280" cy="65" r="3"/>
+                            <circle class="scatter-dot" cx="310" cy="72" r="3"/>
+                            <circle class="scatter-dot" cx="340" cy="68" r="3"/>
+                            <circle class="scatter-dot" cx="370" cy="75" r="3"/>
+                            <circle class="scatter-dot" cx="400" cy="71" r="3"/>
+                        </svg>
+
+                        <!-- Callout box -->
+                        <div style="position: absolute; right: 80px; top: 50px; background: rgba(20, 24, 36, 0.95); padding: 8px 12px; border-radius: 4px; border: 1px solid #2a3444; font-size: 10px;">
+                            <div style="color: #8b95a8;">01/27/26 02:23 Start</div>
+                            <div style="color: #8b95a8;">01/27/26 10:28 End</div>
+                        </div>
+
+                        <!-- Time axis -->
+                        <div class="time-axis">
+                            <span class="time-label">300.0</span>
+                            <span class="time-label">310.0</span>
+                            <span class="time-label">320.0</span>
+                            <span class="time-label">330.0</span>
+                            <span class="time-label">340.0</span>
+                            <span class="time-label">350.0</span>
+                            <span class="time-label">360.0</span>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="data-table-section">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Auto</th>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                    <th>Auto Scale</th>
+                                    <th>Min</th>
+                                    <th>Max</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="checkbox-cell">☑</td>
+                                    <td class="col-tag">X Tag</td>
+                                    <td>312F1C504_BL_Flow gpm</td>
+                                    <td class="checkbox-cell">☑</td>
+                                    <td class="col-value">0</td>
+                                    <td class="col-value">10</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart 4: Bar Chart -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <div class="chart-title-area">
+                            <div class="chart-tag">NexusAi_SAMPLE1 SinePLT7</div>
+                            <div class="chart-description">1 Sine Wave</div>
+                        </div>
+                        <div class="chart-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">Min</span>
+                                <span class="stat-value">0</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max</span>
+                                <span class="stat-value">10</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-canvas">
+                        <!-- Y-axis -->
+                        <div class="y-axis">
+                            <div class="y-label">16.0</div>
+                            <div class="y-label">14.0</div>
+                            <div class="y-label">12.0</div>
+                            <div class="y-label">10.0</div>
+                            <div class="y-label">8.0</div>
+                            <div class="y-label">6.0</div>
+                            <div class="y-label">4.0</div>
+                            <div class="y-label">2.0</div>
+                            <div class="y-label">0.0</div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="grid-lines">
+                            <div class="grid-line-h" style="top: 11.11%"></div>
+                            <div class="grid-line-h" style="top: 22.22%"></div>
+                            <div class="grid-line-h" style="top: 33.33%"></div>
+                            <div class="grid-line-h" style="top: 44.44%"></div>
+                            <div class="grid-line-h" style="top: 55.55%"></div>
+                            <div class="grid-line-h" style="top: 66.66%"></div>
+                            <div class="grid-line-h" style="top: 77.77%"></div>
+                            <div class="grid-line-h" style="top: 88.88%"></div>
+                        </div>
+
+                        <!-- Bar Chart (Magenta bars) -->
+                        <svg class="bar-chart-svg" viewBox="0 0 1000 160" preserveAspectRatio="none">
+                            <rect class="bar-rect" x="180" y="20" width="40" height="140"/>
+                            <rect class="bar-rect" x="280" y="60" width="40" height="100"/>
+                            <rect class="bar-rect" x="380" y="60" width="40" height="100"/>
+                            <rect class="bar-rect" x="480" y="60" width="40" height="100"/>
+                            <rect class="bar-rect" x="580" y="60" width="40" height="100"/>
+                            <rect class="bar-rect" x="680" y="20" width="40" height="140"/>
+                        </svg>
+
+                        <!-- Time axis -->
+                        <div class="time-axis">
+                            <span class="time-label">0.0</span>
+                            <span class="time-label">1.0</span>
+                            <span class="time-label">2.0</span>
+                            <span class="time-label">3.0</span>
+                            <span class="time-label">4.0</span>
+                            <span class="time-label">5.0</span>
+                            <span class="time-label">6.0</span>
+                            <span class="time-label">7.0</span>
+                            <span class="time-label">8.0</span>
+                            <span class="time-label">9.0</span>
+                            <span class="time-label">10.0</span>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="data-table-section">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Panel Type</th>
+                                    <th>Y-Axis Group</th>
+                                    <th>Extras</th>
+                                    <th>Auto</th>
+                                    <th>Tag</th>
+                                    <th>Description</th>
+                                    <th>Auto Scale</th>
+                                    <th>Chart Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>None</td>
+                                    <td>Columns</td>
+                                    <td>Count</td>
+                                    <td class="checkbox-cell">☐</td>
+                                    <td class="col-tag">X Tag</td>
+                                    <td>NexusAi_SAMPLE1 SinePLT7</td>
+                                    <td class="checkbox-cell">☐</td>
+                                    <td>Count</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Control buttons -->
+                    <div style="position: absolute; bottom: 16px; right: 16px; display: flex; gap: 8px;">
+                        <button class="chart-btn">HMIConstrain...</button>
+                        <button class="chart-btn">Hide Constrain...</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
