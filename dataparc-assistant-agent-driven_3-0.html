@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dataPARC Process Assistant - Agent-Driven v3.0</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            background: #f5f7fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            background: #fff;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .trend-header {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 15px;
+            padding-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .trend-header h1 {
+            color: #2E5C8A;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .trend-header p {
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        .trend-chart {
+            background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            height: calc(100vh - 200px);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .trend-chart img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .chart-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.8;
+        }
+
+        /* Mode Switcher */
+        .mode-switcher {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 100;
+            background: white;
+            border: 2px solid #7C3AED;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            min-width: 220px;
+        }
+
+        .mode-switcher label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+        .mode-switcher select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        
+        .mode-switcher select:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Make main content position relative for absolute positioning of mode switcher */
+        .main-content {
+            position: relative;
+        }
+
+        /* Assistant Panel */
+        .assistant-panel {
+            width: 420px;
+            background: #ffffff;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .assistant-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .assistant-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .assistant-title h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .beta-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            align-self: flex-start;
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+
+        .assistant-subtitle {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        /* Agent Selector */
+        .agent-selector {
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+
+        .agent-selector label {
+            font-size: 11px;
+            opacity: 0.8;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .agent-selector select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .agent-selector select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .agent-selector select option {
+            background: #1e3a8a;
+            color: white;
+        }
+
+        .agent-specialty {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .agent-icon {
+            font-size: 16px;
+        }
+
+        /* Context Bar */
+        .context-bar {
+            background: #f0f9ff;
+            border-bottom: 1px solid #bae6fd;
+            padding: 12px 20px;
+            font-size: 13px;
+        }
+
+        .context-label {
+            color: #0369a1;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .context-value {
+            color: #075985;
+        }
+
+        /* Alert Notification */
+        .alert-notification {
+            background: linear-gradient(135deg, #DC2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 16px 20px;
+            margin: 0;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .alert-icon {
+            font-size: 20px;
+        }
+
+        .alert-details {
+            font-size: 13px;
+            line-height: 1.8;
+            margin-bottom: 12px;
+        }
+
+        .alert-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .alert-detail-label {
+            opacity: 0.9;
+        }
+
+        .alert-detail-value {
+            font-weight: 600;
+        }
+
+        .alert-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .alert-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .alert-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .quick-actions-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #6B7280;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .action-btn:hover {
+            background: #f3f4f6;
+            border-color: #7C3AED;
+            color: #7C3AED;
+        }
+
+        /* Smart Suggestions (Idle State) */
+        .smart-suggestions {
+            padding: 20px;
+            background: #fafafa;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .suggestions-header {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .suggestion-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .suggestion-item:hover {
+            border-color: #7C3AED;
+            background: #faf5ff;
+        }
+
+        .suggestion-item:before {
+            content: "💬 ";
+            margin-right: 6px;
+        }
+
+        /* Conversation Area */
+        .conversation-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .message-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .assistant-icon {
+            background: linear-gradient(135deg, #7C3AED 0%, #6d28d9 100%);
+            color: white;
+        }
+
+        .user-icon {
+            background: #e5e7eb;
+            color: #4b5563;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .message-content {
+            background: #f9fafb;
+            padding: 14px 16px;
+            border-radius: 8px;
+            margin-left: 36px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #374151;
+        }
+
+        .user-message .message-content {
+            background: #EEF2FF;
+            color: #3730a3;
+        }
+
+        .assistant-message .message-content {
+            background: #faf5ff;
+            border-left: 3px solid #7C3AED;
+        }
+
+        /* Root Cause Analysis View */
+        .rca-container {
+            margin-top: 16px;
+        }
+
+        .rca-section {
+            margin-bottom: 16px;
+        }
+
+        .rca-section-header {
+            font-weight: 600;
+            color: #7C3AED;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .timeline-item {
+            padding: 8px 0;
+            border-left: 2px solid #e5e7eb;
+            padding-left: 12px;
+            margin-left: 6px;
+            position: relative;
+        }
+
+        .timeline-item:before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            background: #7C3AED;
+            border-radius: 50%;
+            position: absolute;
+            left: -6px;
+            top: 12px;
+        }
+
+        .timeline-time {
+            font-weight: 600;
+            color: #2E5C8A;
+            font-size: 12px;
+        }
+
+        .timeline-event {
+            font-size: 13px;
+            color: #374151;
+            margin-top: 2px;
+        }
+
+        .contributing-factors {
+            list-style: none;
+            padding: 0;
+        }
+
+        .factor-item {
+            padding: 8px 12px;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .factor-number {
+            background: #7C3AED;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .factor-text {
+            flex: 1;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        .expandable-section {
+            margin-top: 12px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 12px;
+        }
+
+        .expandable-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #7C3AED;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .expandable-header:hover {
+            color: #6d28d9;
+        }
+
+        .expandable-content {
+            font-size: 13px;
+            color: #6B7280;
+            padding-left: 20px;
+        }
+
+        .data-list {
+            margin: 12px 0;
+        }
+
+        .data-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .data-item:last-child {
+            border-bottom: none;
+        }
+
+        .data-item strong {
+            color: #2E5C8A;
+        }
+
+        .correlation {
+            font-size: 12px;
+            color: #7C3AED;
+            margin-top: 2px;
+        }
+
+        .action-buttons-inline {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .inline-btn {
+            background: #7C3AED;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .inline-btn:hover {
+            background: #6d28d9;
+        }
+
+        .inline-btn.secondary {
+            background: white;
+            color: #7C3AED;
+            border: 1px solid #7C3AED;
+        }
+
+        .inline-btn.secondary:hover {
+            background: #faf5ff;
+        }
+
+        .feedback-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .feedback-btn {
+            background: none;
+            border: 1px solid #e5e7eb;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .feedback-btn:hover {
+            border-color: #7C3AED;
+            color: #7C3AED;
+        }
+
+        /* Data Sources */
+        .data-sources {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 12px;
+        }
+
+        .data-sources-header {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tag-list {
+            color: #6B7280;
+            line-height: 1.8;
+        }
+
+        .tag {
+            font-family: 'Courier New', monospace;
+            color: #2E5C8A;
+            background: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        /* Input Section */
+        .input-section {
+            border-top: 1px solid #e5e7eb;
+            padding: 16px 20px;
+            background: white;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.2s;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #7C3AED;
+        }
+
+        .send-btn {
+            background: #7C3AED;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .send-btn:hover {
+            background: #6d28d9;
+        }
+
+        .send-btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+        }
+
+        .disclaimer {
+            font-size: 11px;
+            color: #9ca3af;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Thinking indicator */
+        .thinking {
+            display: flex;
+            gap: 4px;
+            padding: 12px;
+        }
+
+        .thinking-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #7C3AED;
+            animation: thinking 1.4s infinite;
+        }
+
+        .thinking-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .thinking-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes thinking {
+            0%, 60%, 100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+            30% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+        }
+
+        /* Mode indicator */
+        .mode-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(124, 58, 237, 0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        function DataPARCAssistantEnhanced() {
+            const [messages, setMessages] = useState([]);
+            const [inputValue, setInputValue] = useState('');
+            const [isThinking, setIsThinking] = useState(false);
+            const [showDataSources, setShowDataSources] = useState(false);
+            const [showSmartSuggestions, setShowSmartSuggestions] = useState(false);
+            
+            // Ref for auto-scrolling conversation
+            const conversationEndRef = useRef(null);
+            
+            
+            // ============================================================
+            // AGENT CONFIGURATION - Agents control all behavior
+            // ============================================================
+            const availableAgents = [
+                { 
+                    id: 'config', 
+                    name: 'dataPARC Configuration Helper', 
+                    icon: '⚙️', 
+                    specialty: 'dataPARC setup & usage expert',
+                    mode: 'normal'
+                },
+                { 
+                    id: 'general', 
+                    name: 'General Process Assistant', 
+                    icon: '🤖', 
+                    specialty: 'General process insights and monitoring',
+                    mode: 'normal'
+                },
+                { 
+                    id: 'kamyr', 
+                    name: 'Kamyr Digester Specialist', 
+                    icon: '🏭', 
+                    specialty: 'Digester operations & cooking process expert',
+                    mode: 'normal'
+                },
+                { 
+                    id: 'alert', 
+                    name: 'Critical Alert Monitor', 
+                    icon: '🔴', 
+                    specialty: 'Real-time alarm monitoring & response',
+                    mode: 'alert'
+                },
+                { 
+                    id: 'rca', 
+                    name: 'Root Cause Analyst', 
+                    icon: '🔍', 
+                    specialty: 'Incident investigation & analysis',
+                    mode: 'rca'
+                }
+            ];
+            
+            const [selectedAgent, setSelectedAgent] = useState(availableAgents[0].id);
+            const getCurrentAgent = () => availableAgents.find(a => a.id === selectedAgent) || availableAgents[0];
+            
+            // Derived state - mode is determined by active agent
+            const mode = getCurrentAgent().mode;
+            
+            
+            // ============================================================
+            // CHART IMAGE CONFIGURATION
+            // ============================================================
+            // Available chart images - add your PNG files to the images/ folder
+            // and list them here for the picker dropdown
+            // ============================================================
+            const availableCharts = [
+                { value: null, label: "No Chart (Placeholder)" },
+				{ value: "images/kamyr_trend_and_graphic.png", label: "Kamyr Trend and Graphic" },
+                { value: "images/kamyr_graphic_editor.png", label: "Kamyr Graphics Designer" }
+                // Add more chart options here as you add images
+            ];
+            
+            const [selectedChart, setSelectedChart] = useState(availableCharts[0].value);
+            const [imageError, setImageError] = useState(false);
+            
+            // Reset error when chart selection changes
+            useEffect(() => {
+                setImageError(false);
+            }, [selectedChart]);
+
+            // Auto-scroll to bottom when messages or thinking state changes
+            useEffect(() => {
+                conversationEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages, isThinking]);
+
+            // Initialize messages based on selected agent
+            useEffect(() => {
+                const agent = getCurrentAgent();
+                
+                switch(agent.id) {
+                    case 'general':
+                        setMessages([
+                            {
+                                type: 'assistant',
+                                content: "I noticed your Kamyr Lower Cooking Zone Temperature exceeded the upper control limit 3 times this week. Would you like me to investigate?",
+                                showReasoning: false,
+                                timestamp: new Date()
+                            }
+                        ]);
+                        setShowSmartSuggestions(false);
+                        break;
+                    
+                    case 'kamyr':
+                        setMessages([
+                            {
+                                type: 'assistant',
+                                content: "I'm tracking your digester performance. Your H-factor is trending 12% below target due to three temperature excursions I've identified (385°F, 380°F, 383°F). This will impact your kappa number. Would you like me to analyze the liquor circulation patterns?",
+                                showReasoning: false,
+                                timestamp: new Date()
+                            }
+                        ]);
+                        setShowSmartSuggestions(false);
+                        break;
+                    
+                    case 'alert':
+                        setMessages([]);
+                        setShowSmartSuggestions(false);
+                        break;
+                    
+                    case 'rca':
+                        setMessages([
+                            {
+                                type: 'user',
+                                content: "Analyze temperature excursion from yesterday",
+                                timestamp: new Date()
+                            },
+                            {
+                                type: 'assistant',
+                                content: 'rca-analysis',
+                                showReasoning: false,
+                                timestamp: new Date()
+                            }
+                        ]);
+                        setShowSmartSuggestions(false);
+                        break;
+                    
+                    case 'config':
+                        setMessages([
+                            {
+                                type: 'assistant',
+                                content: "I can help you set up trending and alerts for your Kamyr temperatures. Would you like assistance configuring alarm rules or creating custom trends?",
+                                showReasoning: false,
+                                timestamp: new Date()
+                            }
+                        ]);
+                        setShowSmartSuggestions(false);
+                        break;
+                    
+                    default:
+                        setMessages([]);
+                        setShowSmartSuggestions(false);
+                        break;
+                }
+            }, [selectedAgent]);
+
+            const handleQuickAction = (action) => {
+                setInputValue(action);
+            };
+
+            const handleSuggestionClick = (suggestion) => {
+                setInputValue(suggestion);
+                setShowSmartSuggestions(false);
+            };
+
+            const handleSend = () => {
+                if (!inputValue.trim()) return;
+
+                setMessages(prev => [...prev, {
+                    type: 'user',
+                    content: inputValue,
+                    timestamp: new Date()
+                }]);
+
+                setIsThinking(true);
+                setInputValue('');
+                setShowSmartSuggestions(false);
+
+                setTimeout(() => {
+                    setIsThinking(false);
+                    
+                    const response = generateResponse(inputValue);
+                    setMessages(prev => [...prev, response]);
+                }, 2000);
+            };
+
+            const generateResponse = (userInput) => {
+                const lowerInput = userInput.toLowerCase();
+                
+                if (lowerInput.includes('spike') || lowerInput.includes('cause')) {
+                    return {
+                        type: 'assistant',
+                        content: 'analysis',
+                        showReasoning: true,
+                        timestamp: new Date()
+                    };
+                }
+
+                return {
+                    type: 'assistant',
+                    content: "I can help you with that. Let me analyze the data and get back to you with specific insights.",
+                    timestamp: new Date()
+                };
+            };
+
+            const toggleReasoning = (index) => {
+                setMessages(prev => prev.map((msg, i) => 
+                    i === index ? { ...msg, showReasoning: !msg.showReasoning } : msg
+                ));
+            };
+
+            const getSmartSuggestions = () => {
+                switch(selectedAgent) {
+                    case 'kamyr':
+                        return [
+                            "Analyze H-factor trends and cooking temperature correlations",
+                            "Check liquor circulation patterns for abnormalities",
+                            "Compare current kappa number against target specifications",
+                            "Review feed rate impacts on residence time"
+                        ];
+                    case 'rca':
+                        return [
+                            "Investigate yesterday's temperature excursion",
+                            "Build timeline for the Aug 9th pressure spike",
+                            "Analyze contributing factors for recent downtime",
+                            "Compare this incident to similar historical events"
+                        ];
+                    case 'config':
+                        return [
+                            "Help me set up trending for new tags",
+                            "Create alarm rules for temperature limits",
+                            "Show me how to build custom calculations",
+                            "Configure email notifications for critical alarms"
+                        ];
+                    default: // general and alert
+                        return [
+                            "Show me tags that are trending outside normal ranges",
+                            "Check H-factor, cooking temps and residence time",
+                            "Create report for downtime on Aug 10",
+                            "Analyze Kamyr control loop performance"
+                        ];
+                }
+            };
+            const smartSuggestions = getSmartSuggestions();
+
+            return (
+                <div className="app-container">
+                    {/* Main Content */}
+                    <div className="main-content">
+                        {/* Chart Display Selector */}
+                        <div className="mode-switcher">
+                            <label>Chart Display:</label>
+                            <select value={selectedChart || ''} onChange={(e) => setSelectedChart(e.target.value || null)}>
+                                {availableCharts.map((chart, idx) => (
+                                    <option key={idx} value={chart.value || ''}>{chart.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="trend-header">
+                            <h1>Unit 2 - Kamyr Cooking Temperatures Trend</h1>
+                            <p>August 8-14, 2025 • Real-time monitoring</p>
+                        </div>
+
+                        <div className="trend-chart">
+                            <div className="mode-indicator">
+                                {getCurrentAgent().icon} {getCurrentAgent().name}
+                            </div>
+                            
+                            {/* Chart Display: Shows image if provided, otherwise shows placeholder */}
+                            {selectedChart && !imageError ? (
+                                <img 
+                                    src={selectedChart}
+                                    alt="dataPARC Trend Chart"
+                                    onError={() => setImageError(true)}
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'contain',
+                                        borderRadius: '4px'
+                                    }}
+                                />
+                            ) : (
+                                <div className="chart-placeholder">
+                                    📊 [Simulated dataPARC Trend Chart]<br />
+                                    Temperature, Pressure, Flow Rate visualization<br />
+                                    {mode === 'alert' && '⚠️ Critical condition highlighted on chart'}
+                                    <div style={{
+                                        marginTop: '20px',
+                                        fontSize: '12px',
+                                        color: '#9ca3af',
+                                        fontStyle: 'italic'
+                                    }}>
+                                        {imageError ? (
+                                            <>Image failed to load. Check file path.</>
+                                        ) : (
+                                            <>
+                                                Use the "Chart Display" picker above to select a chart,<br />
+                                                or add your PNG files to the <code style={{
+                                                    background: '#f3f4f6',
+                                                    padding: '2px 6px',
+                                                    borderRadius: '3px',
+                                                    fontFamily: 'monospace'
+                                                }}>images/</code> folder
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Assistant Panel */}
+                    <div className="assistant-panel">
+                        {/* Header */}
+                        <div className="assistant-header">
+                            <div style={{ flex: 1 }}>
+                                <div className="assistant-title">
+                                    <h2>dataPARC Assistant</h2>
+                                    <span className="beta-badge">BETA</span>
+                                </div>
+                                <p className="assistant-subtitle">Get insights from your process data</p>
+                                <div className="agent-selector">
+                                    <label>Active Agent:</label>
+                                    <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)}>
+                                        {availableAgents.map((agent) => (
+                                            <option key={agent.id} value={agent.id}>{agent.icon} {agent.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                            <button className="close-btn">×</button>
+                        </div>
+
+                        {/* Critical Alert (only shown in alert mode) */}
+                        {mode === 'alert' && (
+                            <div className="alert-notification">
+                                <div className="alert-header">
+                                    <span className="alert-icon">🔴</span>
+                                    <span>CRITICAL ALERT</span>
+                                </div>
+                                <div className="alert-details">
+                                    <div className="alert-detail-item">
+                                        <span className="alert-detail-label">Parameter:</span>
+                                        <span className="alert-detail-value">Lower Cooking Zone Pressure (PI_410_PRESS)</span>
+                                    </div>
+                                    <div className="alert-detail-item">
+                                        <span className="alert-detail-label">Current Value:</span>
+                                        <span className="alert-detail-value">158 PSI</span>
+                                    </div>
+                                    <div className="alert-detail-item">
+                                        <span className="alert-detail-label">Limit:</span>
+                                        <span className="alert-detail-value">150 PSI</span>
+                                    </div>
+                                    <div className="alert-detail-item">
+                                        <span className="alert-detail-label">Duration:</span>
+                                        <span className="alert-detail-value">5 minutes (increasing)</span>
+                                    </div>
+                                    <div className="alert-detail-item">
+                                        <span className="alert-detail-label">Rate of Change:</span>
+                                        <span className="alert-detail-value">+2 PSI/minute</span>
+                                    </div>
+                                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+                                        <strong>Trajectory:</strong> 165 PSI in 3.5 minutes without intervention
+                                    </div>
+                                </div>
+                                <div className="alert-actions">
+                                    <button className="alert-btn">Investigate</button>
+                                    <button className="alert-btn">Acknowledge</button>
+                                    <button className="alert-btn">View History</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Context Bar */}
+                        {mode !== 'alert' && (
+                            <div className="context-bar">
+                                <div className="context-label">
+                                    <span className="agent-icon">{getCurrentAgent().icon}</span> Active Agent:
+                                </div>
+                                <div className="context-value">
+                                    {getCurrentAgent().specialty}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Smart Suggestions (shown only for config agent) */}
+                        {selectedAgent === 'config' && (
+                            <div className="smart-suggestions">
+                                <div className="suggestions-header">
+                                    🎯 Common Tasks
+                                </div>
+                                {smartSuggestions.map((suggestion, idx) => (
+                                    <div 
+                                        key={idx}
+                                        className="suggestion-item"
+                                        onClick={() => handleSuggestionClick(suggestion)}
+                                    >
+                                        {suggestion}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Quick Actions (shown for non-config agents in normal mode) */}
+                        {selectedAgent !== 'config' && mode !== 'alert' && (
+                            <div className="quick-actions">
+                                <div className="quick-actions-label">
+                                    💡 Suggestions based on current view
+                                </div>
+                                <div className="action-buttons">
+                                    <button className="action-btn" onClick={() => handleQuickAction("Perform SPC analysis on trends with control limits")}>
+                                        🔍 Analyze this trend
+                                    </button>
+                                    <button className="action-btn" onClick={() => handleQuickAction("Find anomalies in the data")}>
+                                        ⚠️ Find anomalies
+                                    </button>
+                                    <button className="action-btn" onClick={() => handleQuickAction("Compare with baseline values")}>
+                                        📈 Compare with baseline
+                                    </button>
+                                    <button className="action-btn" onClick={() => handleQuickAction("Set up alarm rules for temperature")}>
+                                        🔔 Set up alarm rules
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Conversation Area */}
+                        <div className="conversation-area">
+                            {messages.map((message, index) => (
+                                <div key={index} className={`message ${message.type}-message`}>
+                                    <div className="message-header">
+                                        <div className={`message-icon ${message.type}-icon`}>
+                                            {message.type === 'assistant' ? '🤖' : '👤'}
+                                        </div>
+                                        <span className="message-sender">
+                                            {message.type === 'assistant' ? 'Assistant' : 'You'}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="message-content">
+                                        {message.content === 'analysis' ? (
+                                            <>
+                                                <div>I've identified 3 lower cooking zone temperature excursions:</div>
+                                                
+                                                <div className="data-list">
+                                                    <div className="data-item">
+                                                        <strong>Aug 9, 2:15 PM - 2:45 PM</strong><br />
+                                                        Peak: 385°F (limit: 375°F)<br />
+                                                        <div className="correlation">📊 Correlation: Chip feed rate drop (-5%)</div>
+                                                    </div>
+                                                    <div className="data-item">
+                                                        <strong>Aug 11, 10:20 AM - 10:40 AM</strong><br />
+                                                        Peak: 380°F<br />
+                                                        <div className="correlation">📊 Correlation: Liquor flow decreased</div>
+                                                    </div>
+                                                    <div className="data-item">
+                                                        <strong>Aug 13, 3:05 PM - 3:25 PM</strong><br />
+                                                        Peak: 383°F<br />
+                                                        <div className="correlation">📊 Correlation: Steam pressure increased</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="action-buttons-inline">
+                                                    <button className="inline-btn">
+                                                        📊 View trend overlay
+                                                    </button>
+                                                    <button className="inline-btn secondary">
+                                                        📝 Create incident report
+                                                    </button>
+                                                    <button className="inline-btn secondary">
+                                                        🔔 Set up predictive alert
+                                                    </button>
+                                                </div>
+
+                                                <div className="expandable-section">
+                                                    <div 
+                                                        className="expandable-header"
+                                                        onClick={() => toggleReasoning(index)}
+                                                    >
+                                                        {message.showReasoning ? '▼' : '▶'} Show reasoning
+                                                    </div>
+                                                    {message.showReasoning && (
+                                                        <div className="expandable-content">
+                                                            I analyzed temperature data from TR_102_TEMP and correlated it with:
+                                                            <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+                                                                <li>Chip feed rate (FC_201_RATE)</li>
+                                                                <li>Liquor flow (FI_305_FLOW)</li>
+                                                                <li>Steam pressure (PI_410_PRESS)</li>
+                                                            </ul>
+                                                            Using statistical correlation analysis with 5-minute weighted averages.
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="data-sources">
+                                                    <div 
+                                                        className="data-sources-header"
+                                                        onClick={() => setShowDataSources(!showDataSources)}
+                                                    >
+                                                        {showDataSources ? '▼' : '▶'} Data Sources Used
+                                                    </div>
+                                                    {showDataSources && (
+                                                        <div className="tag-list">
+                                                            • <span className="tag">TR_102_TEMP</span> (Lower Cooking Temp)<br />
+                                                            • <span className="tag">FC_201_RATE</span> (Chip Feed Rate)<br />
+                                                            • <span className="tag">FI_305_FLOW</span> (Liquor flow)<br />
+                                                            • <span className="tag">PI_410_PRESS</span> (Steam Pressure)<br />
+                                                            <div style={{ marginTop: '8px', color: '#9ca3af' }}>
+                                                                Time Range: Aug 8-14, 2025<br />
+                                                                Last Updated: 2 minutes ago
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="feedback-buttons">
+                                                    <button className="feedback-btn" title="Helpful">👍</button>
+                                                    <button className="feedback-btn" title="Not helpful">👎</button>
+                                                </div>
+                                            </>
+                                        ) : message.content === 'rca-analysis' ? (
+                                            <div className="rca-container">
+                                                <div style={{ fontWeight: 600, fontSize: '14px', marginBottom: '12px' }}>
+                                                    Root Cause Analysis: Temperature Excursion on Aug 9
+                                                </div>
+
+                                                <div className="rca-section">
+                                                    <div className="rca-section-header">
+                                                        ⏱️ Timeline of Events
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">13:55</div>
+                                                        <div className="timeline-event">Feed rate decreased from 1,200 to 1,140 lb/hr (-5%)</div>
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">14:02</div>
+                                                        <div className="timeline-event">Kamyr lower cooking temperature began rising (368°F → 375°F)</div>
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">14:08</div>
+                                                        <div className="timeline-event">Liquor valve CV-401 stuck at 50% (should be 60%)</div>
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">14:15</div>
+                                                        <div className="timeline-event">Temperature alarm triggered at 380°F</div>
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">14:20</div>
+                                                        <div className="timeline-event">Operator manually reduced steam flow to Heaters</div>
+                                                    </div>
+                                                    <div className="timeline-item">
+                                                        <div className="timeline-time">14:45</div>
+                                                        <div className="timeline-event">Temperature returned to normal (370°F)</div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="rca-section">
+                                                    <div className="rca-section-header">
+                                                        🔍 Contributing Factors
+                                                    </div>
+                                                    <ul className="contributing-factors">
+                                                        <li className="factor-item">
+                                                            <div className="factor-number">1</div>
+                                                            <div className="factor-text">
+                                                                <strong>Liquor valve malfunction</strong>
+                                                                <span className="confidence-badge">High Confidence</span>
+                                                                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                                                                    Primary cause - valve CV-401 failed to respond to control signal
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                        <li className="factor-item">
+                                                            <div className="factor-number">2</div>
+                                                            <div className="factor-text">
+                                                                <strong>Feed rate increase</strong>
+                                                                <span className="confidence-badge">High Confidence</span>
+                                                                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                                                                    Secondary - exceeded temperature control capabilities
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                        <li className="factor-item">
+                                                            <div className="factor-number">3</div>
+                                                            <div className="factor-text">
+                                                                <strong>Delayed operator response</strong>
+                                                                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                                                                    7-minute delay likely due to concurrent alarm handling
+                                                                </div>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+
+                                                <div className="rca-section">
+                                                    <div className="rca-section-header">
+                                                        ✅ Recommended Actions
+                                                    </div>
+                                                    <ol style={{ paddingLeft: '20px', fontSize: '13px', lineHeight: '1.8' }}>
+                                                        <li>Inspect CV-401 for mechanical issues</li>
+                                                        <li>Review preventive maintenance schedule for liquor system</li>
+                                                        <li>Perform liquor loop performance analysis</li>
+                                                    </ol>
+                                                </div>
+
+                                                <div className="action-buttons-inline">
+                                                    <button className="inline-btn">
+                                                        📝 Generate full RCA report
+                                                    </button>
+                                                    <button className="inline-btn secondary">
+                                                        📊 View detailed analysis
+                                                    </button>
+                                                    <button className="inline-btn secondary">
+                                                        🔔 Create work order
+                                                    </button>
+                                                </div>
+
+                                                <div className="feedback-buttons">
+                                                    <button className="feedback-btn" title="Helpful">👍</button>
+                                                    <button className="feedback-btn" title="Not helpful">👎</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            message.content
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+
+                            {isThinking && (
+                                <div className="message assistant-message">
+                                    <div className="message-header">
+                                        <div className="message-icon assistant-icon">🤖</div>
+                                        <span className="message-sender">Assistant</span>
+                                    </div>
+                                    <div className="message-content">
+                                        <div className="thinking">
+                                            <div className="thinking-dot"></div>
+                                            <div className="thinking-dot"></div>
+                                            <div className="thinking-dot"></div>
+                                        </div>
+                                        Analyzing data...
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Scroll anchor for auto-scroll */}
+                            <div ref={conversationEndRef} />
+                        </div>
+
+                        {/* Input Section */}
+                        <div className="input-section">
+                            <div className="input-wrapper">
+                                <textarea
+                                    className="input-field"
+                                    placeholder="Ask about your process data..."
+                                    value={inputValue}
+                                    onChange={(e) => setInputValue(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey) {
+                                            e.preventDefault();
+                                            handleSend();
+                                        }
+                                    }}
+                                    rows="2"
+                                />
+                                <button 
+                                    className="send-btn"
+                                    onClick={handleSend}
+                                    disabled={!inputValue.trim()}
+                                >
+                                    Send ➤
+                                </button>
+                            </div>
+                            <div className="disclaimer">
+                                ⚠️ AI may make errors. Always verify critical decisions.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<DataPARCAssistantEnhanced />, document.getElementById('root'));
+    </script>
+</body>
+</html>
