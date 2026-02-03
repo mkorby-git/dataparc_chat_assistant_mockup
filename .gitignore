@@ -1,0 +1,36 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor directories and files
+*.swp
+*.swo
+*~
+
+# VS Code (optional - remove if you want to share settings)
+# .vscode/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies (if you add them later)
+node_modules/
+
+# Build outputs (if you add build tools later)
+dist/
+build/
+*.min.js
+*.min.css
+
+# Environment files (if you add them later)
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
