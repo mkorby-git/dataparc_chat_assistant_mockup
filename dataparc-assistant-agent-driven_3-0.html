@@ -53,7 +53,10 @@
         }
 
         .trend-chart {
-            background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+            background: 
+                radial-gradient(circle, #9ca3af 1.5px, transparent 1.5px),
+                linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+            background-size: 40px 40px, 100% 100%;
             border: 1px solid #e5e7eb;
             border-radius: 8px;
             padding: 20px;
@@ -78,11 +81,15 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            width: 100%;
             height: 100%;
             color: #9ca3af;
             font-size: 14px;
             text-align: center;
             line-height: 1.8;
+            background: 
+                radial-gradient(circle, #d1d5db 1px, transparent 1px);
+            background-size: 40px 40px;
         }
 
         /* Mode Switcher */
@@ -333,11 +340,18 @@
             border-bottom: 1px solid #e5e7eb;
         }
 
-        .quick-actions-label {
+        .quick-actions-header {
             font-size: 12px;
             font-weight: 600;
             color: #6B7280;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        .quick-actions-title {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -383,7 +397,51 @@
             margin-bottom: 12px;
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 8px;
+        }
+
+        .suggestions-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-toggle {
+            border: none;
+            background: none;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .panel-toggle:hover {
+            background: #f3f4f6;
+        }
+
+        .panel-toggle:focus {
+            outline: 2px solid #c4b5fd;
+            outline-offset: 2px;
+        }
+
+        .panel-toggle .chevron {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #6B7280;
+            transition: transform 0.2s ease, border-top-color 0.2s ease;
+        }
+
+        .panel-toggle:hover .chevron {
+            border-top-color: #4c51bf;
+        }
+
+        .panel-toggle .chevron.open {
+            transform: rotate(180deg);
         }
 
         .suggestion-item {
@@ -841,6 +899,8 @@
             const [isThinking, setIsThinking] = useState(false);
             const [showDataSources, setShowDataSources] = useState(false);
             const [showSmartSuggestions, setShowSmartSuggestions] = useState(false);
+            const [smartSuggestionsCollapsed, setSmartSuggestionsCollapsed] = useState(false);
+            const [quickActionsCollapsed, setQuickActionsCollapsed] = useState(false);
             
             // Ref for auto-scrolling conversation
             const conversationEndRef = useRef(null);
@@ -902,9 +962,11 @@
             // ============================================================
             const availableCharts = [
                 { value: null, label: "No Chart (Placeholder)" },
-				{ value: "images/kamyr_trend_and_graphic.png", label: "Kamyr Trend and Graphic" },
+                { value: "images/kamyr_key_operating_parameters_trend.png", label: "Kamyr Key Operating Parameters Trend" },
+			//	{ value: "images/kamyr_trend_and_graphic.png", label: "Kamyr Trend and Graphic" },
                 { value: "images/kamyr_graphic_editor.png", label: "Kamyr Graphics Designer" },
-                { value: "images/nexus_multi_display.png", label: "Nexus Multi-display" }
+            //  { value: "images/nexus_multi_display.png", label: "Nexus Multi-display" }
+
                 // Add more chart options here as you add images
             ];
             
@@ -924,6 +986,8 @@
             // Initialize messages based on selected agent
             useEffect(() => {
                 const agent = getCurrentAgent();
+                setSmartSuggestionsCollapsed(false);
+                setQuickActionsCollapsed(false);
                 
                 switch(agent.id) {
                     case 'general':
@@ -1064,7 +1128,7 @@
                         ];
                     case 'config':
                         return [
-                            "Help me set up trending for new tags",
+                            "Help me customize a centerline for new tags",
                             "Create alarm rules for temperature limits",
                             "Show me how to build custom calculations",
                             "Configure email notifications for critical alarms"
@@ -1100,9 +1164,11 @@
                         </div>
 
                         <div className="trend-chart">
+                            {/* Mode indicator - hidden for now
                             <div className="mode-indicator">
                                 {getCurrentAgent().icon} {getCurrentAgent().name}
                             </div>
+                            */}
                             
                             {/* Chart Display: Shows image if provided, otherwise shows placeholder */}
                             {selectedChart && !imageError ? (
@@ -1225,9 +1291,18 @@
                         {selectedAgent === 'config' && (
                             <div className="smart-suggestions">
                                 <div className="suggestions-header">
-                                    🎯 Common Tasks
+                                    <div className="suggestions-title">🎯 Common Tasks</div>
+                                    <button
+                                        type="button"
+                                        className="panel-toggle"
+                                        onClick={() => setSmartSuggestionsCollapsed(prev => !prev)}
+                                        title={smartSuggestionsCollapsed ? 'Expand suggestions' : 'Collapse suggestions'}
+                                        aria-label={smartSuggestionsCollapsed ? 'Expand suggestions' : 'Collapse suggestions'}
+                                    >
+                                        <span className={`chevron ${smartSuggestionsCollapsed ? '' : 'open'}`} aria-hidden="true"></span>
+                                    </button>
                                 </div>
-                                {smartSuggestions.map((suggestion, idx) => (
+                                {!smartSuggestionsCollapsed && smartSuggestions.map((suggestion, idx) => (
                                     <div 
                                         key={idx}
                                         className="suggestion-item"
@@ -1242,23 +1317,36 @@
                         {/* Quick Actions (shown for non-config agents in normal mode) */}
                         {selectedAgent !== 'config' && mode !== 'alert' && (
                             <div className="quick-actions">
-                                <div className="quick-actions-label">
-                                    💡 Suggestions based on current view
-                                </div>
-                                <div className="action-buttons">
-                                    <button className="action-btn" onClick={() => handleQuickAction("Perform SPC analysis on trends with control limits")}>
-                                        🔍 Analyze this trend
-                                    </button>
-                                    <button className="action-btn" onClick={() => handleQuickAction("Find anomalies in the data")}>
-                                        ⚠️ Find anomalies
-                                    </button>
-                                    <button className="action-btn" onClick={() => handleQuickAction("Compare with baseline values")}>
-                                        📈 Compare with baseline
-                                    </button>
-                                    <button className="action-btn" onClick={() => handleQuickAction("Set up alarm rules for temperature")}>
-                                        🔔 Set up alarm rules
+                                <div className="quick-actions-header">
+                                    <div className="quick-actions-title">
+                                        💡 Suggestions based on current view
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="panel-toggle"
+                                        onClick={() => setQuickActionsCollapsed(prev => !prev)}
+                                        title={quickActionsCollapsed ? 'Expand quick actions' : 'Collapse quick actions'}
+                                        aria-label={quickActionsCollapsed ? 'Expand quick actions' : 'Collapse quick actions'}
+                                    >
+                                        <span className={`chevron ${quickActionsCollapsed ? '' : 'open'}`} aria-hidden="true"></span>
                                     </button>
                                 </div>
+                                {!quickActionsCollapsed && (
+                                    <div className="action-buttons">
+                                        <button className="action-btn" onClick={() => handleQuickAction("Perform SPC analysis on trends with control limits")}>
+                                            🔍 Analyze with SPC charts
+                                        </button>
+                                        <button className="action-btn" onClick={() => handleQuickAction("Find anomalies in the data")}>
+                                            ⚠️ Find anomalies
+                                        </button>
+                                        <button className="action-btn" onClick={() => handleQuickAction("Compare with golden run values")}>
+                                            📈 Compare to golden runs
+                                        </button>
+                                        <button className="action-btn" onClick={() => handleQuickAction("Set up alarm rules for temperature")}>
+                                            🔔 Set up alarm rules
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
