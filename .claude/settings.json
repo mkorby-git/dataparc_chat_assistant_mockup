@@ -1,0 +1,8 @@
+{
+  "skills": {
+    "preview": {
+      "description": "Opens index.html in the default browser for preview",
+      "path": ".claude/skills/preview.md"
+    }
+  }
+}
