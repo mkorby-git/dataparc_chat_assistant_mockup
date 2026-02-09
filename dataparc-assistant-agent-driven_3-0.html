@@ -228,6 +228,14 @@
             color: white;
         }
 
+        .agent-selector select optgroup {
+            background: #1e3a8a;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            font-size: 11px;
+            font-style: normal;
+        }
+
         .agent-specialty {
             font-size: 12px;
             opacity: 0.85;
@@ -1219,9 +1227,16 @@
                                 <div className="agent-selector">
                                     <label>Active Agent:</label>
                                     <select value={selectedAgent} onChange={(e) => setSelectedAgent(e.target.value)}>
-                                        {availableAgents.map((agent) => (
-                                            <option key={agent.id} value={agent.id}>{agent.icon} {agent.name}</option>
-                                        ))}
+                                        <optgroup label="dataPARC Agents">
+                                            {availableAgents.slice(0, 3).map((agent) => (
+                                                <option key={agent.id} value={agent.id}>{agent.icon} {agent.name}</option>
+                                            ))}
+                                        </optgroup>
+                                        <optgroup label="Custom Agents">
+                                            {availableAgents.slice(3).map((agent) => (
+                                                <option key={agent.id} value={agent.id}>{agent.icon} {agent.name}</option>
+                                            ))}
+                                        </optgroup>
                                     </select>
                                 </div>
                             </div>
