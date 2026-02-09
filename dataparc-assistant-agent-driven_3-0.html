@@ -912,23 +912,9 @@
             const availableAgents = [
                 { 
                     id: 'config', 
-                    name: 'dataPARC Configuration Helper', 
+                    name: 'dataPARC Configuration Assistant', 
                     icon: '⚙️', 
                     specialty: 'dataPARC setup & usage expert',
-                    mode: 'normal'
-                },
-                { 
-                    id: 'general', 
-                    name: 'General Process Assistant', 
-                    icon: '🤖', 
-                    specialty: 'General process insights and monitoring',
-                    mode: 'normal'
-                },
-                { 
-                    id: 'kamyr', 
-                    name: 'Kamyr Digester Specialist', 
-                    icon: '🏭', 
-                    specialty: 'Digester operations & cooking process expert',
                     mode: 'normal'
                 },
                 { 
@@ -944,6 +930,13 @@
                     icon: '🔍', 
                     specialty: 'Incident investigation & analysis',
                     mode: 'rca'
+                },
+                { 
+                    id: 'kamyr', 
+                    name: 'Kamyr Digester Specialist', 
+                    icon: '🏭', 
+                    specialty: 'Digester operations & cooking process expert',
+                    mode: 'normal'
                 }
             ];
             
@@ -978,10 +971,10 @@
                 setImageError(false);
             }, [selectedChart]);
 
-            // Auto-scroll to bottom when messages or thinking state changes
+            // Auto-scroll to bottom when messages, thinking state, or suggestions panel changes
             useEffect(() => {
                 conversationEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-            }, [messages, isThinking]);
+            }, [messages, isThinking, smartSuggestionsCollapsed]);
 
             // Initialize messages based on selected agent
             useEffect(() => {
@@ -990,18 +983,6 @@
                 setQuickActionsCollapsed(false);
                 
                 switch(agent.id) {
-                    case 'general':
-                        setMessages([
-                            {
-                                type: 'assistant',
-                                content: "I noticed your Kamyr Lower Cooking Zone Temperature exceeded the upper control limit 3 times this week. Would you like me to investigate?",
-                                showReasoning: false,
-                                timestamp: new Date()
-                            }
-                        ]);
-                        setShowSmartSuggestions(false);
-                        break;
-                    
                     case 'kamyr':
                         setMessages([
                             {
@@ -1011,29 +992,27 @@
                                 timestamp: new Date()
                             }
                         ]);
-                        setShowSmartSuggestions(false);
+                        setShowSmartSuggestions(true);
+                        setInputValue('');
                         break;
                     
                     case 'alert':
                         setMessages([]);
                         setShowSmartSuggestions(false);
+                        setInputValue('');
                         break;
                     
                     case 'rca':
                         setMessages([
                             {
-                                type: 'user',
-                                content: "Analyze temperature excursion from yesterday",
-                                timestamp: new Date()
-                            },
-                            {
                                 type: 'assistant',
-                                content: 'rca-analysis',
+                                content: "I'm ready to help investigate incidents. I can analyze temperature excursions, pressure spikes, or other process anomalies. What would you like to investigate?",
                                 showReasoning: false,
                                 timestamp: new Date()
                             }
                         ]);
-                        setShowSmartSuggestions(false);
+                        setShowSmartSuggestions(true);
+                        setInputValue('');
                         break;
                     
                     case 'config':
@@ -1045,12 +1024,14 @@
                                 timestamp: new Date()
                             }
                         ]);
-                        setShowSmartSuggestions(false);
+                        setShowSmartSuggestions(true);
+                        setInputValue('');
                         break;
                     
                     default:
                         setMessages([]);
                         setShowSmartSuggestions(false);
+                        setInputValue('');
                         break;
                 }
             }, [selectedAgent]);
@@ -1061,7 +1042,7 @@
 
             const handleSuggestionClick = (suggestion) => {
                 setInputValue(suggestion);
-                setShowSmartSuggestions(false);
+                setSmartSuggestionsCollapsed(true);
             };
 
             const handleSend = () => {
@@ -1075,7 +1056,7 @@
 
                 setIsThinking(true);
                 setInputValue('');
-                setShowSmartSuggestions(false);
+                setSmartSuggestionsCollapsed(true);
 
                 setTimeout(() => {
                     setIsThinking(false);
@@ -1088,11 +1069,28 @@
             const generateResponse = (userInput) => {
                 const lowerInput = userInput.toLowerCase();
                 
-                if (lowerInput.includes('spike') || lowerInput.includes('cause')) {
+                // Kamyr agent: simpler process analysis
+                if (selectedAgent === 'kamyr' && 
+                    (lowerInput.includes('analyze') || lowerInput.includes('check') || 
+                     lowerInput.includes('excursion') || lowerInput.includes('circulation') ||
+                     lowerInput.includes('patterns') || lowerInput.includes('correlations'))) {
                     return {
                         type: 'assistant',
                         content: 'analysis',
-                        showReasoning: true,
+                        showReasoning: false,
+                        timestamp: new Date()
+                    };
+                }
+                
+                // RCA agent: detailed root cause analysis
+                if (selectedAgent === 'rca' && 
+                    (lowerInput.includes('investigate') || lowerInput.includes('timeline') ||
+                     lowerInput.includes('excursion') || lowerInput.includes('spike') ||
+                     lowerInput.includes('analyze') || lowerInput.includes('contributing'))) {
+                    return {
+                        type: 'assistant',
+                        content: 'rca-analysis',
+                        showReasoning: false,
                         timestamp: new Date()
                     };
                 }
@@ -1114,10 +1112,10 @@
                 switch(selectedAgent) {
                     case 'kamyr':
                         return [
-                            "Analyze H-factor trends and cooking temperature correlations",
-                            "Check liquor circulation patterns for abnormalities",
-                            "Compare current kappa number against target specifications",
-                            "Review feed rate impacts on residence time"
+                            "Analyze H-factor and cooking temp correlations",
+                            "Check liquor circulation patterns",
+                            "Compare current kappa number against target specs",
+                            "Review feed rate and residence time"
                         ];
                     case 'rca':
                         return [
@@ -1133,13 +1131,8 @@
                             "Show me how to build custom calculations",
                             "Configure email notifications for critical alarms"
                         ];
-                    default: // general and alert
-                        return [
-                            "Show me tags that are trending outside normal ranges",
-                            "Check H-factor, cooking temps and residence time",
-                            "Create report for downtime on Aug 10",
-                            "Analyze Kamyr control loop performance"
-                        ];
+                    default:
+                        return [];
                 }
             };
             const smartSuggestions = getSmartSuggestions();
@@ -1287,11 +1280,11 @@
                             </div>
                         )}
 
-                        {/* Smart Suggestions (shown only for config agent) */}
-                        {selectedAgent === 'config' && (
+                        {/* Smart Suggestions (shown for all agents except alert) */}
+                        {mode !== 'alert' && showSmartSuggestions && (
                             <div className="smart-suggestions">
                                 <div className="suggestions-header">
-                                    <div className="suggestions-title">🎯 Common Tasks</div>
+                                    <div className="suggestions-title">🎯 Suggested Actions</div>
                                     <button
                                         type="button"
                                         className="panel-toggle"
@@ -1311,42 +1304,6 @@
                                         {suggestion}
                                     </div>
                                 ))}
-                            </div>
-                        )}
-
-                        {/* Quick Actions (shown for non-config agents in normal mode) */}
-                        {selectedAgent !== 'config' && mode !== 'alert' && (
-                            <div className="quick-actions">
-                                <div className="quick-actions-header">
-                                    <div className="quick-actions-title">
-                                        💡 Suggestions based on current view
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="panel-toggle"
-                                        onClick={() => setQuickActionsCollapsed(prev => !prev)}
-                                        title={quickActionsCollapsed ? 'Expand quick actions' : 'Collapse quick actions'}
-                                        aria-label={quickActionsCollapsed ? 'Expand quick actions' : 'Collapse quick actions'}
-                                    >
-                                        <span className={`chevron ${quickActionsCollapsed ? '' : 'open'}`} aria-hidden="true"></span>
-                                    </button>
-                                </div>
-                                {!quickActionsCollapsed && (
-                                    <div className="action-buttons">
-                                        <button className="action-btn" onClick={() => handleQuickAction("Perform SPC analysis on trends with control limits")}>
-                                            🔍 Analyze with SPC charts
-                                        </button>
-                                        <button className="action-btn" onClick={() => handleQuickAction("Find anomalies in the data")}>
-                                            ⚠️ Find anomalies
-                                        </button>
-                                        <button className="action-btn" onClick={() => handleQuickAction("Compare with golden run values")}>
-                                            📈 Compare to golden runs
-                                        </button>
-                                        <button className="action-btn" onClick={() => handleQuickAction("Set up alarm rules for temperature")}>
-                                            🔔 Set up alarm rules
-                                        </button>
-                                    </div>
-                                )}
                             </div>
                         )}
 
